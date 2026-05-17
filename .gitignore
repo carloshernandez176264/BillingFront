@@ -1,0 +1,15 @@
+# Node
+node_modules/
+dist/
+.angular/
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store

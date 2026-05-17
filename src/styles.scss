@@ -1,0 +1,132 @@
+// ============================================================
+// BILLING PLATFORM — Global Styles
+// ============================================================
+
+// PrimeNG 19 — no external theme file needed, configured via provider
+// Styles only from primeicons and primeflex (loaded via angular.json)
+
+// ---- CSS Variables ----
+:root {
+  --bp-primary:      #1e4078;
+  --bp-primary-light:#2d5fa8;
+  --bp-surface:      #f8fafc;
+  --bp-text:         #1e293b;
+  --bp-text-muted:   #64748b;
+  --bp-border:       #e2e8f0;
+  --bp-success:      #22c55e;
+  --bp-warning:      #f59e0b;
+  --bp-danger:       #ef4444;
+  --bp-sidebar-w:    260px;
+  --bp-topbar-h:     64px;
+}
+
+// ---- Reset / Base ----
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 14px;
+  background: var(--bp-surface);
+  color: var(--bp-text);
+}
+
+// ---- Layout ----
+.bp-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.bp-content {
+  flex: 1;
+  margin-left: var(--bp-sidebar-w);
+  margin-top: var(--bp-topbar-h);
+  padding: 1.5rem;
+  overflow-x: hidden;
+}
+
+// ---- Page header ----
+.bp-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+
+  h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--bp-primary);
+    margin: 0;
+  }
+}
+
+// ---- Card ----
+.bp-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid var(--bp-border);
+  box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  padding: 1.25rem;
+}
+
+// ---- Status badges ----
+.bp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: .2rem .65rem;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+
+  &.active, &.approved  { background: #dcfce7; color: #15803d; }
+  &.inactive, &.rejected { background: #fee2e2; color: #b91c1c; }
+  &.pending             { background: #fef9c3; color: #a16207; }
+  &.generated           { background: #dbeafe; color: #1d4ed8; }
+  &.sent                { background: #ede9fe; color: #6d28d9; }
+  &.cancelled           { background: #f1f5f9; color: #475569; }
+  &.draft               { background: #f1f5f9; color: #475569; }
+  &.billed, &.invoiced  { background: #d1fae5; color: #065f46; }
+}
+
+// ---- PrimeNG overrides ----
+.p-datatable .p-datatable-thead > tr > th {
+  background: var(--bp-primary) !important;
+  color: #fff !important;
+  font-weight: 600;
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  border: none !important;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: #f0f7ff !important;
+}
+
+.p-button.p-button-sm {
+  font-size: .8rem;
+  padding: .35rem .75rem;
+}
+
+.p-dialog .p-dialog-header {
+  background: var(--bp-primary);
+  color: #fff;
+  border-radius: 10px 10px 0 0;
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-icon {
+  color: #fff;
+}
+
+// ---- Utilities ----
+.text-muted  { color: var(--bp-text-muted); }
+.text-right  { text-align: right; }
+.gap-2       { gap: .5rem; }
+.mt-3        { margin-top: 1rem; }
+.mb-3        { margin-bottom: 1rem; }
+.d-flex      { display: flex; }
+.align-center{ align-items: center; }
+.justify-between { justify-content: space-between; }
+.w-full      { width: 100%; }
