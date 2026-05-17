@@ -28,10 +28,13 @@ import { User, PageResponse } from '@core/models';
 
     <div class="bp-card mb-3">
       <div style="display:flex;gap:1rem;flex-wrap:wrap;">
-        <input pInputText [(ngModel)]="search" placeholder="Buscar por nombre o correo..."
+        <input pInputText [(ngModel)]="search"
+               placeholder="Buscar por nombre o correo..."
                style="flex:1;min-width:200px" (input)="onSearch()"/>
         <p-select [(ngModel)]="statusFilter" [options]="statusOptions"
-                  placeholder="Estado" [style]="{'min-width': '160px'}" (onChange)="load()"></p-select>
+                  placeholder="Estado" [style]="{'min-width':'160px'}"
+                  (onChange)="load()">
+        </p-select>
         <p-button icon="pi pi-refresh" severity="secondary" (click)="reset()"/>
       </div>
     </div>
@@ -57,16 +60,21 @@ import { User, PageResponse } from '@core/models';
             <td>{{ u.fullName }}</td>
             <td>
               @for (role of u.roles; track role) {
-                <p-tag [value]="role" severity="info" styleClass="mr-1"/>
+                <span class="bp-badge active" style="margin-right:.25rem">
+                  {{ role }}
+                </span>
               }
             </td>
             <td>
-              <span [class]="'bp-badge ' + u.status.toLowerCase()">{{ u.status }}</span>
+              <span [class]="'bp-badge ' + u.status.toLowerCase()">
+                {{ traducirEstado(u.status) }}
+              </span>
             </td>
             <td>
               @if (u.locked) {
-                <span class="bp-badge" style="background:#fee2e2;color:#b91c1c">
-                  <i class="pi pi-lock" style="margin-right:.3rem"></i>Locked
+                <span class="bp-badge"
+                      style="background:#fee2e2;color:#b91c1c">
+                  <i class="pi pi-lock" style="margin-right:.3rem"></i>Bloqueado
                 </span>
               } @else {
                 <span style="color:#94a3b8;font-size:.85rem">—</span>
@@ -76,10 +84,10 @@ import { User, PageResponse } from '@core/models';
               <div style="display:flex;gap:.4rem">
                 @if (u.locked) {
                   <p-button icon="pi pi-lock-open" severity="warn" size="small"
-                            (click)="unlock(u)" title="Unlock account"/>
+                            (click)="unlock(u)" title="Desbloquear cuenta"/>
                 }
                 <p-button icon="pi pi-trash" severity="danger" size="small"
-                          (click)="confirmDeactivate(u)"/>
+                          (click)="confirmDeactivate(u)" title="Desactivar"/>
               </div>
             </td>
           </tr>
@@ -94,14 +102,16 @@ import { User, PageResponse } from '@core/models';
       </p-table>
     </div>
 
-    <!-- Nuevo Usuario Dialog -->
+    <p-confirmDialog/>
+
     <p-dialog [(visible)]="showDialog" header="Nuevo Usuario de Plataforma"
               [modal]="true" [style]="{width:'520px'}">
       <form [formGroup]="form" (ngSubmit)="save()">
+
         <div class="field mb-3">
           <label>Correo Electrónico *</label>
-          <input pInputText formControlName="email" type="email" class="w-full"
-                 placeholder="user@company.com"/>
+          <input pInputText formControlName="email" type="email"
+                 class="w-full" placeholder="usuario@empresa.com"/>
           @if (form.get('email')?.invalid && form.get('email')?.touched) {
             <small class="p-error">Ingresa un correo electrónico válido</small>
           }
@@ -113,29 +123,40 @@ import { User, PageResponse } from '@core/models';
         </div>
 
         <div class="field mb-3">
-          <label>Password *</label>
+          <label>Contraseña *</label>
           <p-password formControlName="password" styleClass="w-full"
                       [toggleMask]="true" [feedback]="true"
                       placeholder="Mín. 8 caracteres, mayúscula+minúscula+número+especial"/>
           @if (form.get('password')?.invalid && form.get('password')?.touched) {
-            <small class="p-error">La contraseña debe tener mínimo 8 caracteres</small>
+            <small class="p-error">
+              La contraseña debe tener mínimo 8 caracteres
+            </small>
           }
         </div>
 
         <div class="field mb-3">
-          <label>Roles *</label>
+          <label>Rol *</label>
+          @if (roleOptions.length === 0) {
+            <div style="padding:.5rem;background:#fef3c7;border-radius:6px;
+                         font-size:.85rem;color:#92400e">
+              <i class="pi pi-exclamation-triangle" style="margin-right:.4rem"></i>
+              Cargando roles... Si no aparecen, verifica que el endpoint
+              /api/v1/roles esté disponible.
+            </div>
+          }
           <p-select formControlName="roleId" [options]="roleOptions"
                     optionLabel="label" optionValue="value"
-                    placeholder="Selecciona un rol" class="w-full"/>
+                    placeholder="Selecciona un rol" class="w-full">
+          </p-select>
           <small class="text-muted">El usuario tendrá este rol asignado</small>
         </div>
 
         <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem">
           <p-button label="Cancelar" severity="secondary"
                     (click)="showDialog=false" type="button"/>
-          <p-button label="Create User" icon="pi pi-check" type="submit"
+          <p-button label="Crear Usuario" icon="pi pi-check" type="submit"
                     [loading]="saving()"
-                    [disabled]="form.invalid || saving()"/>
+                    [disabled]="form.invalid || saving() || roleOptions.length === 0"/>
         </div>
       </form>
     </p-dialog>
@@ -159,10 +180,10 @@ export class UserListComponent implements OnInit {
   showDialog   = false;
 
   statusOptions = [
-    { label: 'Todos',       value: '' },
-    { label: 'Activo',    value: 'ACTIVE' },
-    { label: 'Inactivo',  value: 'INACTIVE' },
-    { label: 'Bloqueado',   value: 'BLOCKED' },
+    { label: 'Todos',      value: '' },
+    { label: 'Activo',     value: 'ACTIVE' },
+    { label: 'Inactivo',   value: 'INACTIVE' },
+    { label: 'Bloqueado',  value: 'BLOCKED' },
     { label: 'Suspendido', value: 'SUSPENDED' }
   ];
 
@@ -207,17 +228,18 @@ export class UserListComponent implements OnInit {
   loadRoles() {
     this.http.get<any[]>(`${environment.apiUrl}/roles`).subscribe({
       next: roles => {
-        this.roleOptions = roles.map(r => ({ label: r.name, value: r.id }));
+        this.roleOptions = roles
+          .filter(r => r.active !== false)
+          .map(r => ({
+            label: this.traducirRol(r.name),
+            value: r.id  // UUID real del rol
+          }));
       },
       error: () => {
-        // fallback if roles endpoint not exposed
-        this.roleOptions = [
-          { label: 'ADMIN',         value: 'admin' },
-          { label: 'FINANCE',       value: 'finance' },
-          { label: 'MANAGER',       value: 'manager' },
-          { label: 'CLIENT_VIEWER', value: 'viewer' },
-          { label: 'AUDITOR',       value: 'auditor' }
-        ];
+        this.messageService.add({
+          severity: 'warn', summary: 'Advertencia',
+          detail: 'No se pudieron cargar los roles. Verifica el endpoint /api/v1/roles'
+        });
       }
     });
   }
@@ -234,7 +256,12 @@ export class UserListComponent implements OnInit {
     this.load();
   }
 
-  reset() { this.search = ''; this.statusFilter = ''; this.page = 0; this.load(); }
+  reset() {
+    this.search = '';
+    this.statusFilter = '';
+    this.page = 0;
+    this.load();
+  }
 
   openDialog() {
     this.form.reset();
@@ -246,16 +273,20 @@ export class UserListComponent implements OnInit {
     this.saving.set(true);
 
     const { email, fullName, password, roleId } = this.form.value;
-    const body = { email, fullName, password, roleIds: [roleId] };
+    const body = {
+      email,
+      fullName,
+      password,
+      roleIds: [roleId]  // UUID real del rol
+    };
 
     this.http.post<User>(`${environment.apiUrl}/users`, body).subscribe({
       next: () => {
         this.saving.set(false);
         this.showDialog = false;
         this.messageService.add({
-          severity: 'success',
-          summary: 'Usuario Creado',
-          detail: `Usuario ${email} creado. Debe cambiar la contraseña en el primer ingreso.`
+          severity: 'success', summary: 'Usuario Creado',
+          detail: `Usuario ${email} creado exitosamente. Debe cambiar su contraseña en el primer ingreso.`
         });
         this.load();
       },
@@ -264,34 +295,60 @@ export class UserListComponent implements OnInit {
   }
 
   unlock(user: User) {
-    this.http.post<void>(`${environment.apiUrl}/users/${user.id}/unlock`, {})
-      .subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'success', summary: 'Desbloqueado',
-            detail: `Cuenta ${user.email} desbloqueada`
-          });
-          this.load();
-        }
-      });
+    this.http.post<void>(
+      `${environment.apiUrl}/users/${user.id}/unlock`, {}
+    ).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success', summary: 'Desbloqueado',
+          detail: `Cuenta ${user.email} desbloqueada exitosamente`
+        });
+        this.load();
+      }
+    });
   }
 
   confirmDeactivate(user: User) {
     this.confirmService.confirm({
-      message: `¿Desactivar usuario "${user.email}"?`,
-      header: 'Confirmar Desactivación',
-      icon: 'pi pi-exclamation-triangle',
+      message:     `¿Desactivar al usuario "${user.email}"?`,
+      header:      'Confirmar Desactivación',
+      icon:        'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, desactivar',
+      rejectLabel: 'Cancelar',
       accept: () => {
-        this.http.delete<void>(`${environment.apiUrl}/users/${user.id}`).subscribe({
+        this.http.delete<void>(
+          `${environment.apiUrl}/users/${user.id}`
+        ).subscribe({
           next: () => {
             this.messageService.add({
               severity: 'success', summary: 'Desactivado',
-              detail: 'Usuario desactivado'
+              detail: 'Usuario desactivado exitosamente'
             });
             this.load();
           }
         });
       }
     });
+  }
+
+  traducirEstado(s: string): string {
+    const m: Record<string, string> = {
+      ACTIVE:    'Activo',
+      INACTIVE:  'Inactivo',
+      BLOCKED:   'Bloqueado',
+      SUSPENDED: 'Suspendido'
+    };
+    return m[s] ?? s;
+  }
+
+  traducirRol(r: string): string {
+    const m: Record<string, string> = {
+      ADMIN:         'Administrador',
+      FINANCE:       'Finanzas',
+      MANAGER:       'Gerente',
+      CLIENT_VIEWER: 'Visualizador',
+      AUDITOR:       'Auditor'
+    };
+    return m[r] ?? r;
   }
 }

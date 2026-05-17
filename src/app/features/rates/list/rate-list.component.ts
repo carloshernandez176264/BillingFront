@@ -34,83 +34,118 @@ import { Rate } from '@core/models';
                [paginator]="true" [rows]="20" responsiveLayout="scroll">
         <ng-template pTemplate="header">
           <tr>
-            <th>Cliente</th><th>Perfil</th><th>Type</th><th>Valor</th>
-            <th>Moneda</th><th>Vigente Desde</th><th>Vigente Hasta</th>
-            <th>Estado</th><th style="width:80px">Acciones</th>
+            <th>Cliente</th>
+            <th>Perfil</th>
+            <th>Tipo</th>
+            <th class="text-right">Valor</th>
+            <th>Moneda</th>
+            <th>Vigente Desde</th>
+            <th>Vigente Hasta</th>
+            <th>Estado</th>
+            <th style="width:80px">Acciones</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-r>
           <tr>
-            <td>{{ r.clientName ?? '(Base rate)' }}</td>
+            <td>{{ r.clientName ?? '(Tarifa base)' }}</td>
             <td>{{ r.developerProfileName }}</td>
-            <td><p-tag [value]="r.rateType" severity="info"/></td>
-            <td class="text-right"><strong>{{ getRateValue(r) | number:'1.2-2' }}</strong></td>
+            <td>
+              <span [class]="'bp-badge ' + r.rateType.toLowerCase()">
+                {{ traducirTipo(r.rateType) }}
+              </span>
+            </td>
+            <td class="text-right">
+              <strong>{{ getRateValue(r) | number:'1.0-0' }}</strong>
+            </td>
             <td>{{ r.currencyCode }}</td>
-            <td>{{ r.validFrom | date:'mediumDate' }}</td>
-            <td>{{ r.validUntil ? (r.validUntil | date:'mediumDate') : '—' }}</td>
-            <td><span [class]="'bp-badge ' + r.status.toLowerCase()">{{ r.status }}</span></td>
+            <td>{{ r.validFrom | date:'dd/MM/yyyy' }}</td>
+            <td>{{ r.validUntil ? (r.validUntil | date:'dd/MM/yyyy') : '—' }}</td>
+            <td>
+              <span [class]="'bp-badge ' + r.status.toLowerCase()">
+                {{ traducirEstado(r.status) }}
+              </span>
+            </td>
             <td>
               <p-button icon="pi pi-trash" severity="danger" size="small"
-                        (click)="confirmDelete(r)"/>
+                        (click)="confirmDelete(r)" title="Desactivar tarifa"/>
             </td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-          <tr><td colspan="9" style="text-align:center;padding:2rem;color:#64748b">No se encontraron tarifas</td></tr>
+          <tr>
+            <td colspan="9" style="text-align:center;padding:2rem;color:#64748b">
+              No se encontraron tarifas
+            </td>
+          </tr>
         </ng-template>
       </p-table>
     </div>
 
-    <!-- Nueva Tarifa Dialog -->
+    <p-confirmDialog/>
+
     <p-dialog [(visible)]="showDialog" header="Nueva Tarifa de Facturación"
               [modal]="true" [style]="{width:'650px'}">
       <form [formGroup]="form" (ngSubmit)="save()">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
 
           <div class="field">
-            <label>Cliente (opcional — blank = base rate)</label>
+            <label>Cliente (opcional — sin cliente = tarifa base)</label>
             <p-select formControlName="clientId" [options]="clientOptions"
                       optionLabel="label" optionValue="value"
-                      placeholder="Todos los clientes" [showClear]="true" class="w-full"/>
+                      placeholder="Selecciona el cliente" [showClear]="true"
+                      class="w-full">
+            </p-select>
           </div>
 
           <div class="field">
             <label>Perfil de Desarrollador *</label>
             <p-select formControlName="developerProfileId" [options]="profileOptions"
-                      optionLabel="label" optionValue="value" class="w-full"/>
+                      optionLabel="label" optionValue="value" class="w-full">
+            </p-select>
           </div>
 
           <div class="field">
             <label>Moneda *</label>
             <p-select formControlName="currencyId" [options]="currencyOptions"
-                      optionLabel="label" optionValue="value" class="w-full"/>
+                      optionLabel="label" optionValue="value" class="w-full">
+            </p-select>
           </div>
 
           <div class="field">
             <label>Tipo de Tarifa *</label>
             <p-select formControlName="rateType" [options]="rateTypeOptions"
-                      optionLabel="label" optionValue="value" class="w-full" (onChange)="onRateTypeChange()"/>
+                      optionLabel="label" optionValue="value"
+                      class="w-full" (onChange)="onRateTypeChange()">
+            </p-select>
           </div>
 
           @if (form.value.rateType === 'MONTHLY') {
             <div class="field" style="grid-column:1/-1">
               <label>Tarifa Mensual *</label>
               <p-inputnumber formControlName="monthlyRate" mode="decimal"
-                            [minFractionDigits]="2" class="w-full"/>
+                            [minFractionDigits]="0" class="w-full"/>
+              @if (form.value.monthlyRate) {
+                <small class="text-muted">
+                  Valor día (÷21): {{ (form.value.monthlyRate / 21) | number:'1.0-0' }} —
+                  Valor hora (÷168): {{ (form.value.monthlyRate / 168) | number:'1.0-0' }}
+                </small>
+              }
             </div>
           }
+
           @if (form.value.rateType === 'DAILY') {
             <div class="field" style="grid-column:1/-1">
               <label>Tarifa Diaria *</label>
               <p-inputnumber formControlName="dailyRate" mode="decimal"
-                            [minFractionDigits]="2" class="w-full"/>
+                            [minFractionDigits]="0" class="w-full"/>
             </div>
           }
+
           @if (form.value.rateType === 'HOURLY') {
             <div class="field" style="grid-column:1/-1">
               <label>Tarifa por Hora *</label>
               <p-inputnumber formControlName="hourlyRate" mode="decimal"
-                            [minFractionDigits]="2" class="w-full"/>
+                            [minFractionDigits]="0" class="w-full"/>
             </div>
           }
 
@@ -126,19 +161,24 @@ import { Rate } from '@core/models';
 
           <div class="field">
             <label>Horas Laborales/Día</label>
-            <p-inputnumber formControlName="workingHoursPerDay" [min]="1" [max]="24"
-                          [minFractionDigits]="1" class="w-full"/>
+            <p-inputnumber formControlName="workingHoursPerDay"
+                          [min]="1" [max]="24" [minFractionDigits]="1"
+                          class="w-full"/>
+            <small class="text-muted">Estándar Colombia: 8 horas</small>
           </div>
 
           <div class="field">
             <label>Descuento %</label>
-            <p-inputnumber formControlName="discountPercentage" [min]="0" [max]="100"
-                          suffix="%" class="w-full"/>
+            <p-inputnumber formControlName="discountPercentage"
+                          [min]="0" [max]="100" suffix="%"
+                          class="w-full"/>
           </div>
 
         </div>
-        <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem">
-          <p-button label="Cancelar" severity="secondary" (click)="showDialog=false" type="button"/>
+
+        <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.25rem">
+          <p-button label="Cancelar" severity="secondary"
+                    (click)="showDialog=false" type="button"/>
           <p-button label="Crear Tarifa" icon="pi pi-check" type="submit"
                     [loading]="saving()" [disabled]="form.invalid"/>
         </div>
@@ -149,19 +189,19 @@ import { Rate } from '@core/models';
 })
 export class RateListComponent implements OnInit {
 
-  rates   = signal<Rate[]>([]);
-  loading = signal(false);
-  saving  = signal(false);
+  rates      = signal<Rate[]>([]);
+  loading    = signal(false);
+  saving     = signal(false);
   showDialog = false;
 
-  clientOptions:  { label: string; value: string }[] = [];
-  profileOptions: { label: string; value: string }[] = [];
-  currencyOptions:{ label: string; value: string }[] = [];
+  clientOptions:   { label: string; value: string }[] = [];
+  profileOptions:  { label: string; value: string }[] = [];
+  currencyOptions: { label: string; value: string }[] = [];
 
   rateTypeOptions = [
-    { label: 'Mensual', value: 'MONTHLY' },
+    { label: 'Mensual',  value: 'MONTHLY' },
     { label: 'Diaria',   value: 'DAILY' },
-    { label: 'Por Hora',  value: 'HOURLY' }
+    { label: 'Por Hora', value: 'HOURLY' }
   ];
 
   form = this.fb.group({
@@ -205,7 +245,13 @@ export class RateListComponent implements OnInit {
     });
   }
 
-  openDialog() { this.form.reset({ rateType: 'MONTHLY', workingHoursPerDay: 8, discountPercentage: 0, includesTax: false }); this.showDialog = true; }
+  openDialog() {
+    this.form.reset({
+      rateType: 'MONTHLY', workingHoursPerDay: 8,
+      discountPercentage: 0, includesTax: false
+    });
+    this.showDialog = true;
+  }
 
   onRateTypeChange() {
     this.form.patchValue({ monthlyRate: null, dailyRate: null, hourlyRate: null });
@@ -220,8 +266,12 @@ export class RateListComponent implements OnInit {
     this.saving.set(true);
     this.rateService.create(this.form.value as any).subscribe({
       next: () => {
-        this.saving.set(false); this.showDialog = false;
-        this.messageService.add({ severity: 'success', summary: 'Creada', detail: 'Tarifa creada' });
+        this.saving.set(false);
+        this.showDialog = false;
+        this.messageService.add({
+          severity: 'success', summary: 'Creada',
+          detail: 'Tarifa creada exitosamente'
+        });
         this.load();
       },
       error: () => this.saving.set(false)
@@ -230,12 +280,40 @@ export class RateListComponent implements OnInit {
 
   confirmDelete(r: Rate) {
     this.confirmService.confirm({
-      message: `Deactivate this rate for "${r.developerProfileName}"?`,
+      message:     `¿Desactivar la tarifa de "${r.developerProfileName}"?`,
+      header:      'Confirmar desactivación',
+      icon:        'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, desactivar',
+      rejectLabel: 'Cancelar',
       accept: () => {
         this.rateService.deactivate(r.id).subscribe({
-          next: () => { this.messageService.add({ severity: 'success', summary: 'Listo', detail: 'Tarifa desactivada' }); this.load(); }
+          next: () => {
+            this.messageService.add({
+              severity: 'success', summary: 'Listo',
+              detail: 'Tarifa desactivada'
+            });
+            this.load();
+          }
         });
       }
     });
+  }
+
+  traducirTipo(t: string): string {
+    const m: Record<string, string> = {
+      MONTHLY: 'Mensual',
+      DAILY:   'Diaria',
+      HOURLY:  'Por Hora'
+    };
+    return m[t] ?? t;
+  }
+
+  traducirEstado(s: string): string {
+    const m: Record<string, string> = {
+      ACTIVE:   'Activa',
+      INACTIVE: 'Inactiva',
+      EXPIRED:  'Vencida'
+    };
+    return m[s] ?? s;
   }
 }

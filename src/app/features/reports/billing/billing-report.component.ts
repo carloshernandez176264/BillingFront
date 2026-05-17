@@ -49,7 +49,7 @@ interface PeriodSummary {
           <div style="font-size:2rem;font-weight:700;color:var(--bp-primary)">{{ summary()!.clientCount }}</div>
         </div>
         <div class="bp-card" style="text-align:center">
-          <div style="font-size:.85rem;color:#64748b;margin-bottom:.4rem">Total de Líneas</div>
+          <div style="font-size:.85rem;color:#64748b;margin-bottom:.4rem">Total Desarrolladores</div>
           <div style="font-size:2rem;font-weight:700;color:#0891b2">{{ totalLines() }}</div>
         </div>
         <div class="bp-card" style="text-align:center">
@@ -64,8 +64,8 @@ interface PeriodSummary {
         <p-table [value]="summary()!.clientResults" dataKey="clientId">
           <ng-template pTemplate="header">
             <tr>
-              <th>Cliente</th><th class="text-right">Líneas</th>
-              <th class="text-right">Subtotal</th><th class="text-right">Descuentos</th>
+              <th>Cliente</th><th class="text-right">Desarrolladores</th>
+              <th class="text-right">Subtotal</th><th class="text-right">Descuentos por Ausencias</th>
               <th class="text-right">IVA</th><th class="text-right">Total</th>
             </tr>
           </ng-template>
