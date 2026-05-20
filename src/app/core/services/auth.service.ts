@@ -74,6 +74,18 @@ export class AuthService {
     this._currentUser.set(null);
   }
 
+  isTokenExpiringSoon(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const expiry = payload.exp * 1000; // convertir a ms
+    const now = Date.now();
+    const twoMinutes = 2 * 60 * 1000;
+    return (expiry - now) < twoMinutes; // true si expira en menos de 2 minutos
+  } catch {
+    return false;
+  }
+}
+
   private decodeStoredToken(): TokenPayload | null {
     const token = localStorage.getItem(this.TOKEN_KEY);
     return token ? this.decodeToken(token) : null;
