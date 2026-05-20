@@ -23,24 +23,23 @@ import { Client } from '@core/models';
       <p-button label="Nuevo Cliente" icon="pi pi-plus" routerLink="/clients/new"/>
     </div>
 
-    <!-- Filters -->
     <div class="bp-card mb-3">
-      <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
-        <div style="flex:1; min-width:200px;">
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:200px">
           <label>Buscar</label>
           <input pInputText [(ngModel)]="search" placeholder="Nombre o NIT..."
                  class="w-full" (input)="onSearch()"/>
         </div>
-        <div style="min-width:180px;">
+        <div style="min-width:180px">
           <label>Estado</label>
           <p-select [(ngModel)]="statusFilter" [options]="statusOptions"
                     placeholder="Todos" class="w-full" (onChange)="load()"/>
         </div>
-        <p-button icon="pi pi-refresh" severity="secondary" (click)="reset()" label="Limpiar"/>
+        <p-button icon="pi pi-refresh" severity="secondary"
+                  (click)="reset()" label="Limpiar"/>
       </div>
     </div>
 
-    <!-- Table -->
     <div class="bp-card">
       <p-table [value]="clients()" [loading]="loading()" dataKey="id"
                [rows]="pageSize" [totalRecords]="totalElements()"
@@ -54,7 +53,7 @@ import { Client } from '@core/models';
             <th>País</th>
             <th>Moneda</th>
             <th>Estado</th>
-            <th style="width:120px">Acciones</th>
+            <th style="width:160px">Acciones</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-c>
@@ -62,26 +61,46 @@ import { Client } from '@core/models';
             <td><code>{{ c.taxId }}</code></td>
             <td>
               <strong>{{ c.companyName }}</strong>
-              <div *ngIf="c.tradeName" class="text-muted" style="font-size:.8rem">{{ c.tradeName }}</div>
+              <div *ngIf="c.tradeName" style="font-size:.8rem;color:#64748b">
+                {{ c.tradeName }}
+              </div>
             </td>
             <td>{{ c.country }}</td>
             <td><p-tag [value]="c.primaryCurrencyCode" severity="info"/></td>
-            <td><span [class]="'bp-badge ' + c.status.toLowerCase()">{{ estadoCliente(c.status) }}</span></td>
+            <td>
+              <span [class]="'bp-badge ' + c.status.toLowerCase()">
+                {{ estadoCliente(c.status) }}
+              </span>
+            </td>
             <td>
               <div style="display:flex;gap:.4rem">
                 <p-button icon="pi pi-pencil" severity="secondary" size="small"
-                          [routerLink]="['/clients', c.id, 'edit']"/>
-                <p-button icon="pi pi-trash"  severity="danger"    size="small"
-                          (click)="confirmDelete(c)"/>
+                          [routerLink]="['/clients', c.id, 'edit']"
+                          title="Editar"/>
+                @if (c.status === 'INACTIVE' || c.status === 'SUSPENDED') {
+                  <p-button icon="pi pi-check-circle" severity="success" size="small"
+                            (click)="confirmActivate(c)" title="Activar cliente"/>
+                }
+                @if (c.status === 'ACTIVE') {
+                  <p-button icon="pi pi-ban" severity="danger" size="small"
+                            (click)="confirmDeactivate(c)" title="Desactivar cliente"/>
+                }
               </div>
             </td>
           </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
-          <tr><td colspan="6" style="text-align:center;padding:2rem;color:#64748b">No se encontraron clientes</td></tr>
+          <tr>
+            <td colspan="6"
+                style="text-align:center;padding:2rem;color:#64748b">
+              No se encontraron clientes
+            </td>
+          </tr>
         </ng-template>
       </p-table>
     </div>
+
+    <p-confirmDialog/>
   `
 })
 export class ClientListComponent implements OnInit {
@@ -113,8 +132,8 @@ export class ClientListComponent implements OnInit {
     this.clientService.findAll({
       search: this.search || undefined,
       status: this.statusFilter || undefined,
-      page: this.currentPage,
-      size: this.pageSize
+      page:   this.currentPage,
+      size:   this.pageSize
     }).subscribe({
       next: res => {
         this.clients.set(res.content);
@@ -137,24 +156,59 @@ export class ClientListComponent implements OnInit {
     this.load();
   }
 
-  reset() { this.search = ''; this.statusFilter = ''; this.currentPage = 0; this.load(); }
+  reset() {
+    this.search = '';
+    this.statusFilter = '';
+    this.currentPage = 0;
+    this.load();
+  }
 
   estadoCliente(status: string): string {
-    const map: any = { ACTIVE: 'Activo', INACTIVE: 'Inactivo', SUSPENDED: 'Suspendido' };
+    const map: any = {
+      ACTIVE:    'Activo',
+      INACTIVE:  'Inactivo',
+      SUSPENDED: 'Suspendido'
+    };
     return map[status] ?? status;
   }
 
-  confirmDelete(client: Client) {
+  confirmActivate(client: Client) {
     this.confirmService.confirm({
-      message: `¿Desactivar el cliente "${client.companyName}"?`,
+      message: `¿Activar el cliente "<strong>${client.companyName}</strong>"?`,
+      header: 'Confirmar activación',
+      icon: 'pi pi-check-circle',
+      acceptLabel: 'Sí, activar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-success',
+      accept: () => {
+        this.clientService.activate(client.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success', summary: 'Cliente activado',
+              detail: `${client.companyName} fue activado exitosamente`
+            });
+            this.load();
+          }
+        });
+      }
+    });
+  }
+
+  confirmDeactivate(client: Client) {
+    this.confirmService.confirm({
+      message: `¿Desactivar el cliente "<strong>${client.companyName}</strong>"?`,
       header: 'Confirmar desactivación',
       icon: 'pi pi-exclamation-triangle',
       acceptLabel: 'Sí, desactivar',
       rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         this.clientService.deactivate(client.id).subscribe({
           next: () => {
-            this.messageService.add({ severity: 'success', summary: 'Listo', detail: 'Cliente desactivado' });
+            this.messageService.add({
+              severity: 'warn', summary: 'Cliente desactivado',
+              detail: `${client.companyName} fue desactivado`
+            });
             this.load();
           }
         });

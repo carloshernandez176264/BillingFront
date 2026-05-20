@@ -32,6 +32,10 @@ export class ClientService {
     return this.http.put<Client>(`${this.url}/${id}`, request);
   }
 
+  activate(id: string) {
+    return this.http.patch<Client>(`${this.url}/${id}/activate`, {});
+}
+
   deactivate(id: string) {
     return this.http.delete<void>(`${this.url}/${id}`);
   }
